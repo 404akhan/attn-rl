@@ -4,7 +4,6 @@ import os
 import numpy as np
 import random
 import tensorflow as tf 
-import torch
 
 from gym.monitoring import VideoRecorder
 
@@ -23,9 +22,10 @@ from collections import deque, namedtuple
 Transition = namedtuple("Transition", ["state", "action"])
 replay_memory = []
 replay_memory_size = 500 * 1000
-batch_size = 64
+upd_init_size = 10 * 1000
+batch_size = 16
 attn_net = Attn()
-if torch.cuda.is_available():
+if attn_net.cuda_exist:
     attn_net.cuda()
 
 def parse_args():
@@ -48,37 +48,48 @@ def make_env(game_name):
 
 
 def play(env, act, stochastic, video_path):
-    num_episodes = 0
     attn_net_play = False
+    counter = 0
+    reward_sum = 0
     obs = env.reset()
+    accuracy_arr = []
+
     while True:
         action = act(np.array(obs)[None], stochastic=stochastic)[0]
 
         if len(replay_memory) == replay_memory_size: # pop
             replay_memory.pop(0)
         replay_memory.append(Transition(np.array(obs), action))
-        if len(replay_memory) > 1000: # train
+
+        if len(replay_memory) > upd_init_size: # train
+            counter += 1
             samples = random.sample(replay_memory, batch_size)
             states_batch, action_batch = map(np.array, zip(*samples))
-            print('accuracy %.2f%%' % attn_net.train_(states_batch, action_batch))
+            acc = attn_net.train_(states_batch, action_batch)
+            accuracy_arr.append(acc)
+
+            if counter % 100 == 0:
+                print('update %d, accuracy %.2f%%' % (counter, np.mean(accuracy_arr)))
+                accuracy_arr = []
 
         if attn_net_play: # play
             action = attn_net.action_(np.array(obs))
         obs, rew, done, info = env.step(action)
+        reward_sum += rew
         
-        if len(info["rewards"]) > num_episodes:
-            print(attn_net_play, info["rewards"][-1])
-            num_episodes = len(info["rewards"])
         if done:
             obs = env.reset()
+            print(attn_net_play, reward_sum)
+            
             attn_net_play = np.random.randint(10) == 0
+            reward_sum = 0
 
 
 if __name__ == '__main__':
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.333)
     tf_config = tf.ConfigProto(
-        inter_op_parallelism_threads=4,
-        intra_op_parallelism_threads=4,
+        inter_op_parallelism_threads=8,
+        intra_op_parallelism_threads=8,
         gpu_options=gpu_options)
 
     with tf.Session(config=tf_config) as sess:

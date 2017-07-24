@@ -17,9 +17,9 @@ class Attn(nn.Module):
     def __init__(self):
         super(Attn, self).__init__()
         self.lr = 0.0001
-        self.batch_size = 64
+        self.batch_size = 16
         self.cuda_exist = torch.cuda.is_available()
-        print(self.cuda_exist)
+        print('cuda exist', self.cuda_exist)
 
         self.conv1 = nn.Conv2d(4, 24, 3, stride=2, padding=1)
         self.batchNorm1 = nn.BatchNorm2d(24)
@@ -109,7 +109,7 @@ class Attn(nn.Module):
         input_img = input_img.transpose(0, 3, 1, 2) / 255.
         input_img = torch.FloatTensor(input_img)
         label = torch.LongTensor(label)
-        if self.cuda:
+        if self.cuda_exist:
             input_img = input_img.cuda()
             label = label.cuda()
         input_img = Variable(input_img)
@@ -131,7 +131,7 @@ class Attn(nn.Module):
         input_img = np.expand_dims(input_img, 0)
         input_img = input_img.transpose(0, 3, 1, 2) / 255.
         input_img = torch.FloatTensor(input_img)
-        if self.cuda:
+        if self.cuda_exist:
             input_img = input_img.cuda()
         input_img = Variable(input_img)
 
