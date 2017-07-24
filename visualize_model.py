@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 import os
+import matplotlib.pyplot as plt 
 
 def selu(x):
     alpha = 1.6732632423543772848170429916717
@@ -51,11 +52,22 @@ class Attn(nn.Module):
             np_coord_tensor[:,i,:] = np.array(self.cvt_coord(i))
         self.coord_tensor.data.copy_(torch.from_numpy(np_coord_tensor))
 
-        print('num of heads', self.num_heads)
+        print('two heads')
 
 
     def cvt_coord(self, i):
         return [(i/6-2.5)/2.5, (i%6-2.5)/2.5]
+
+        
+    def argmax2d(self, prob):
+        maxx = prob[0][0]
+        indices = [0, 0]
+        for i in range(5):
+            for j in range(5):
+                if maxx < prob[i][j]:
+                    maxx = prob[i][j]
+                    indices = [i, j]
+        return indices[0], indices[1]
 
 
     def forward(self, img):
@@ -85,6 +97,10 @@ class Attn(nn.Module):
         # (bsize x 36 x 26)
         x_flat2 = x_flat.view(mb*d*d, 26)
 
+        ### plot probs
+        img_plt = img[0].permute(1, 2, 0).data.numpy()
+        plt.imshow(img_plt[:, :, 2], cmap='gray')
+        plt.show()
         objs = []
         for i in range(self.num_heads):
             scores = self.w3[i](selu(self.w2[i](selu(self.w1[i](x_flat2))))) # bsize*36 x 1
@@ -94,6 +110,18 @@ class Attn(nn.Module):
             obj = torch.bmm(probs, x_flat).squeeze(1) # bsize x 26
 
             objs.append(obj)
+
+            ### plot probs
+            prob = probs[0][0].view(d, d).data.numpy()
+            max_i, max_j = self.argmax2d(prob)
+            print(prob)
+            print(max_i, max_j)
+
+            plt.imshow(img_plt[:, :, 2][14*max_i:14*max_i+14, 14*max_j:14*max_j+14], cmap='gray')
+            plt.show()
+
+            ### end
+
         concat = torch.cat(objs, dim=1)
 
         x_f = self.f_fc1(concat)

@@ -17,7 +17,7 @@ from baselines.common.misc_util import (
 from baselines.common.atari_wrappers_deprecated import wrap_dqn
 from baselines.deepq.experiments.atari.model import model, dueling_model
 
-from model_attn_double import *
+from visualize_model import *
 from collections import deque, namedtuple
 Transition = namedtuple("Transition", ["state", "action"])
 replay_memory = []
@@ -27,6 +27,12 @@ batch_size = 16
 attn_net = Attn()
 if attn_net.cuda_exist:
     attn_net.cuda()
+
+filename = 'model-torch/counter_31000.pth'
+print('==> loading checkpoint {}'.format(filename))
+checkpoint = torch.load(filename, map_location=lambda storage, loc: storage)
+attn_net.load_state_dict(checkpoint)
+print('==> loaded checkpoint {}'.format(filename))
 
 def parse_args():
     parser = argparse.ArgumentParser("Run an already learned DQN model.")
@@ -54,15 +60,17 @@ def play(env, act, stochastic, video_path):
     reward_sum = 0
     obs = env.reset()
     accuracy_arr = []
+    counter_frame = 0
 
     while True:
+        counter_frame += 1
         action = act(np.array(obs)[None], stochastic=stochastic)[0]
 
         if len(replay_memory) == replay_memory_size: # pop
             replay_memory.pop(0)
         replay_memory.append(Transition(np.array(obs), action))
 
-        if len(replay_memory) > upd_init_size: # train
+        if len(replay_memory) > batch_size and counter_frame > 100: # train
             counter += 1
             samples = random.sample(replay_memory, batch_size)
             states_batch, action_batch = map(np.array, zip(*samples))
@@ -82,10 +90,11 @@ def play(env, act, stochastic, video_path):
         if done:
             counter_games += 1
             obs = env.reset()
-            print(counter_games, attn_net_play, reward_sum)
+            print(attn_net_play, reward_sum)
             
-            attn_net_play = counter_games%10 == 0
+            # attn_net_play = counter_games%10 == 0
             reward_sum = 0
+            counter_frame = 0
 
 
 if __name__ == '__main__':
