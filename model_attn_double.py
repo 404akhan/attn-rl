@@ -147,4 +147,4 @@ class Attn(nn.Module):
 
 
     def save_model(self, counter):
-        torch.save(self.state_dict(), 'model-torch/counter_{}.pth'.format(counter))
+        torch.save(self.state_dict(), 'model-torch-2heads/counter_{}.pth'.format(counter))
