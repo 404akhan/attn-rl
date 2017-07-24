@@ -28,7 +28,7 @@ attn_net = Attn()
 if attn_net.cuda_exist:
     attn_net.cuda()
 
-filename = 'model-torch/counter_31000.pth'
+filename = 'model-torch-2heads/counter_96000.pth'
 print('==> loading checkpoint {}'.format(filename))
 checkpoint = torch.load(filename, map_location=lambda storage, loc: storage)
 attn_net.load_state_dict(checkpoint)
