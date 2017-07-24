@@ -50,6 +50,7 @@ def make_env(game_name):
 def play(env, act, stochastic, video_path):
     attn_net_play = False
     counter = 0
+    counter_games = 0
     reward_sum = 0
     obs = env.reset()
     accuracy_arr = []
@@ -71,7 +72,7 @@ def play(env, act, stochastic, video_path):
             if counter % 100 == 0:
                 print('update %d, accuracy %.2f%%' % (counter, np.mean(accuracy_arr)))
                 accuracy_arr = []
-                if counter % 1000 == 0: attn_net.save(counter)
+                if counter % 1000 == 0: attn_net.save_model(counter)
 
         if attn_net_play: # play
             action = attn_net.action_(np.array(obs))
@@ -79,10 +80,11 @@ def play(env, act, stochastic, video_path):
         reward_sum += rew
         
         if done:
+            counter_games += 1
             obs = env.reset()
             print(attn_net_play, reward_sum)
             
-            attn_net_play = np.random.randint(10) == 0
+            attn_net_play = counter_games%10 == 0
             reward_sum = 0
 
 
