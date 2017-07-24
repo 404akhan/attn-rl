@@ -71,6 +71,7 @@ def play(env, act, stochastic, video_path):
             if counter % 100 == 0:
                 print('update %d, accuracy %.2f%%' % (counter, np.mean(accuracy_arr)))
                 accuracy_arr = []
+                if counter % 1000 == 0: attn_net.save(counter)
 
         if attn_net_play: # play
             action = attn_net.action_(np.array(obs))

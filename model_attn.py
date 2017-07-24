@@ -140,3 +140,6 @@ class Attn(nn.Module):
         # bsize x 1
         return pred[0][0]
 
+
+    def save_model(self, counter):
+        torch.save(self.state_dict(), 'model-torch/counter_{}.pth'.format(counter))

@@ -94,7 +94,7 @@ class Attn(nn.Module):
             obj = torch.bmm(probs, x_flat).squeeze(1) # bsize x 26
 
             objs.append(obj)
-        concat = torch.cat(obj, dim=1)
+        concat = torch.cat(objs, dim=1)
 
         x_f = self.f_fc1(concat)
         x_f = selu(x_f)
@@ -145,3 +145,6 @@ class Attn(nn.Module):
         # bsize x 1
         return pred[0][0]
 
+
+    def save_model(self, counter):
+        torch.save(self.state_dict(), 'model-torch/counter_{}.pth'.format(counter))
