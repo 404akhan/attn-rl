@@ -17,7 +17,7 @@ from baselines.common.misc_util import (
 from baselines.common.atari_wrappers_deprecated import wrap_dqn
 from baselines.deepq.experiments.atari.model import model, dueling_model
 
-from model_attn import *
+from model_attn_double import *
 from collections import deque, namedtuple
 Transition = namedtuple("Transition", ["state", "action"])
 replay_memory = []
